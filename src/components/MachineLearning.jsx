@@ -5,6 +5,9 @@ import { FaRobot, FaCog, FaDownload, FaCheckCircle, FaChartBar } from 'react-ico
 import Plot from 'react-plotly.js';
 import './MachineLearning.css'; 
 
+// FIXED: Use environment variable for API URL
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+
 function MachineLearning({ sessionId, summary }) {
   const [taskType, setTaskType] = useState('classification');
   const [modelType, setModelType] = useState('RandomForestClassifier');
@@ -80,7 +83,8 @@ function MachineLearning({ sessionId, summary }) {
 
   const handleDownloadModel = () => {
     if (modelFilename) {
-      window.open(`http://localhost:5000/api/download/model/${sessionId}`, '_blank');
+      // FIXED: Use API_URL instead of hardcoded localhost
+      window.open(`${API_URL}/api/download/model/${sessionId}`, '_blank');
       toast.success('Model download started!');
     }
   };
