@@ -3,6 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import './LandingPage.css';
 import logo from '../assets/logo.jpeg';
 
+// FIXED: Use environment variable for API URL
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+console.log('🔗 API URL configured as:', API_URL);
 
 function LandingPage() {
   const navigate = useNavigate();
@@ -65,8 +68,10 @@ function LandingPage() {
       const formData = new FormData();
       formData.append('file', file);
 
-      // Call your actual API endpoint
-      const response = await fetch('http://localhost:5000/api/upload', {
+      // FIXED: Use API_URL constant instead of hardcoded localhost
+      console.log('📤 Uploading file to:', `${API_URL}/api/upload`);
+
+      const response = await fetch(`${API_URL}/api/upload`, {
         method: 'POST',
         body: formData
       });
@@ -76,6 +81,7 @@ function LandingPage() {
       }
       
       const data = await response.json();
+      console.log('✅ Upload successful, session ID:', data.session_id);
 
       // Redirect to dashboard app
       navigate('/app', { 
@@ -86,7 +92,7 @@ function LandingPage() {
         } 
       });
     } catch (error) {
-      console.error('Upload error:', error);
+      console.error('❌ Upload error:', error);
       alert('Upload failed. Please try again.');
     }
   };
@@ -265,7 +271,7 @@ function LandingPage() {
         </div>
       </section>
 
-      {/* UPCOMING FEATURES SECTION - NEW! */}
+      {/* UPCOMING FEATURES SECTION */}
       <section className="upcoming-section" id="upcoming">
         <div className="section-container">
           <div className="section-header">
