@@ -3,10 +3,14 @@ import { FaDownload, FaHome, FaLinkedin, FaGithub, FaEnvelope } from 'react-icon
 import toast from 'react-hot-toast';
 import logo from '../assets/logo.jpeg';
 
+// FIXED: Use environment variable for API URL
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+
 function Navbar({ filename, sessionId, onBackToLanding }) {
   const handleDownload = () => {
     if (sessionId) {
-      window.open(`http://localhost:5000/api/download/${sessionId}`, '_blank');
+      // FIXED: Use API_URL instead of hardcoded localhost
+      window.open(`${API_URL}/api/download/${sessionId}`, '_blank');
       toast.success('Download started!');
     }
   };
@@ -36,7 +40,7 @@ function Navbar({ filename, sessionId, onBackToLanding }) {
           </div>
         )}
 
-        {/* Actions Section - REMOVED NEW UPLOAD BUTTON */}
+        {/* Actions Section */}
         <div className="navbar-actions">
           {onBackToLanding && (
             <button onClick={onBackToLanding} className="nav-btn">
