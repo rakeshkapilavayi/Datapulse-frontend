@@ -1,13 +1,42 @@
 import axios from 'axios';
 
-const API_URL = 'https://datapulse-api-y158.onrender.com/api';  // FIXED: Added /api
+// Use environment variable with fallback
+const BASE_URL = process.env.REACT_APP_API_URL || 'https://datapulse-api-y158.onrender.com';
+const API_URL = `${BASE_URL}/api`;
+
+console.log('🔧 API Service initialized with base URL:', API_URL);
 
 const api = axios.create({
   baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 30000, // 30 second timeout
 });
+
+// Add request interceptor for debugging
+api.interceptors.request.use(
+  (config) => {
+    console.log('📡 API Request:', config.method?.toUpperCase(), config.url);
+    return config;
+  },
+  (error) => {
+    console.error('❌ Request Error:', error);
+    return Promise.reject(error);
+  }
+);
+
+// Add response interceptor for debugging
+api.interceptors.response.use(
+  (response) => {
+    console.log('✅ API Response:', response.status, response.config.url);
+    return response;
+  },
+  (error) => {
+    console.error('❌ API Error:', error.response?.status, error.config?.url, error.message);
+    return Promise.reject(error);
+  }
+);
 
 // Upload file
 export const uploadFile = (formData) => {
@@ -20,7 +49,7 @@ export const uploadFile = (formData) => {
 
 // Get dataset summary
 export const getSummary = (sessionId) => {
-  return api.get(`/summary/${sessionId}`);  // FIXED: Proper template literal
+  return api.get(`/summary/${sessionId}`);
 };
 
 // Manual cleaning
@@ -35,12 +64,12 @@ export const autoClean = (data) => {
 
 // Get visualizations
 export const getVisualizations = (sessionId, type = 'all') => {
-  return api.get(`/visualizations/${sessionId}?type=${type}`);  // FIXED: Proper template literal
+  return api.get(`/visualizations/${sessionId}?type=${type}`);
 };
 
 // Get outliers
 export const getOutliers = (sessionId) => {
-  return api.get(`/outliers/${sessionId}`);  // FIXED: Proper template literal
+  return api.get(`/outliers/${sessionId}`);
 };
 
 // Treat outliers
@@ -59,8 +88,8 @@ export const predict = (data) => {
 };
 
 // Get insights
-export const getInsights = (sessionId, type = 'raw') => {  // FIXED: Changed default to 'raw'
-  return api.get(`/insights/${sessionId}?type=${type}`);  // FIXED: Proper template literal
+export const getInsights = (sessionId, type = 'raw') => {
+  return api.get(`/insights/${sessionId}?type=${type}`);
 };
 
 // Download cleaned data
