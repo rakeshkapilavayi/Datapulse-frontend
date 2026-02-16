@@ -1,11 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { uploadFile } from '../services/api';  // FIXED: Import from centralized API
 import './LandingPage.css';
 import logo from '../assets/logo.jpeg';
-
-// FIXED: Use environment variable for API URL
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-console.log('🔗 API URL configured as:', API_URL);
 
 function LandingPage() {
   const navigate = useNavigate();
@@ -55,6 +52,7 @@ function LandingPage() {
     }
   };
 
+  // FIXED: Use centralized API service instead of direct fetch
   const handleFileUpload = async (file) => {
     const allowedExtensions = ['csv', 'xls', 'xlsx'];
     const fileExtension = file.name.split('.').pop().toLowerCase();
@@ -68,19 +66,12 @@ function LandingPage() {
       const formData = new FormData();
       formData.append('file', file);
 
-      // FIXED: Use API_URL constant instead of hardcoded localhost
-      console.log('📤 Uploading file to:', `${API_URL}/api/upload`);
+      console.log('📤 Uploading file:', file.name);
 
-      const response = await fetch(`${API_URL}/api/upload`, {
-        method: 'POST',
-        body: formData
-      });
+      // Use the centralized API service
+      const response = await uploadFile(formData);
+      const data = response.data;
       
-      if (!response.ok) {
-        throw new Error('Upload failed');
-      }
-      
-      const data = await response.json();
       console.log('✅ Upload successful, session ID:', data.session_id);
 
       // Redirect to dashboard app
@@ -93,7 +84,8 @@ function LandingPage() {
       });
     } catch (error) {
       console.error('❌ Upload error:', error);
-      alert('Upload failed. Please try again.');
+      const errorMessage = error.response?.data?.error || error.message || 'Upload failed. Please try again.';
+      alert(errorMessage);
     }
   };
 
