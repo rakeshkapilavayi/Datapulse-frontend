@@ -4,9 +4,6 @@ import { getVisualizations } from '../services/api';
 import { FaChartBar, FaCamera } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 
-// FIXED: Use environment variable for API URL
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-
 function Visualizations({ sessionId }) {
   const [viz, setViz] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -121,8 +118,7 @@ function Visualizations({ sessionId }) {
 
     setCustomChartLoading(true);
 
-    // FIXED: Use API_URL instead of hardcoded localhost
-    fetch(`${API_URL}/api/visualizations/${sessionId}/custom`, {
+    fetch(`http://localhost:5000/api/visualizations/${sessionId}/custom`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(customChart)
