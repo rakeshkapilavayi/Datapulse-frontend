@@ -3,9 +3,6 @@ import { executeCode } from '../services/api';
 import toast from 'react-hot-toast';
 import { FaTerminal, FaPlay, FaPlus, FaTrash, FaUpload } from 'react-icons/fa';
 
-// FIXED: Use environment variable for API URL
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-
 function DeveloperConsole({ sessionId }) {
   const [cells, setCells] = useState([
     { id: 1, code: '# Write your Python code here\n# Use "df" to access your dataset\n\ndf.head()', output: null, executing: false }
@@ -101,8 +98,7 @@ function DeveloperConsole({ sessionId }) {
       formData.append('file', file);
       formData.append('session_id', sessionId);
       
-      // FIXED: Use API_URL instead of hardcoded localhost
-      fetch(`${API_URL}/api/upload_secondary`, {
+      fetch('http://localhost:5000/api/upload_secondary', {
         method: 'POST',
         body: formData
       })
