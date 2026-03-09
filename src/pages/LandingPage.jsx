@@ -5,7 +5,7 @@ import logo from '../assets/logo.jpeg';
 import dashboardImg from '../assets/interface.png';
 
 // ─── API URL ──────────────────────────────────────────────────────────────────
-const API_URL = 'http://localhost:5000/api';// ─── Credits ─────────────────────────────────────────────────────────────────
+const API_URL = 'https://datapulse-api-y158.onrender.com/api';// ─── Credits ─────────────────────────────────────────────────────────────────
 const CREDITS_KEY   = 'datapulse_credits';
 const DEMO_MODE_KEY = 'datapulse_demo_mode';
 
