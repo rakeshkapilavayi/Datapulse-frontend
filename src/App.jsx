@@ -11,11 +11,10 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<LandingPage />} />
+        <Route path="/"   element={<LandingPage />} />
         <Route path="/app" element={<DashboardApp />} />
       </Routes>
-      
-      {/* Toast Notifications */}
+
       <Toaster
         position="top-right"
         toastOptions={{
@@ -29,38 +28,25 @@ function App() {
             fontSize: '14px',
             fontWeight: '500',
           },
-          success: {
-            iconTheme: {
-              primary: '#10b981',
-              secondary: '#fff',
-            },
-          },
-          error: {
-            iconTheme: {
-              primary: '#ef4444',
-              secondary: '#fff',
-            },
-          },
+          success: { iconTheme: { primary: '#10b981', secondary: '#fff' } },
+          error:   { iconTheme: { primary: '#ef4444', secondary: '#fff' } },
         }}
       />
     </BrowserRouter>
   );
 }
 
-// Dashboard App Component
 function DashboardApp() {
-  const navigate = useNavigate();
-  const location = useLocation();
-  
-  // Get initial state from navigation (from landing page upload)
+  const navigate  = useNavigate();
+  const location  = useLocation();
   const initialState = location.state || {};
-  
-  const [sessionId, setSessionId] = useState(initialState.sessionId || null);
-  const [filename, setFilename] = useState(initialState.filename || '');
-  const [summary, setSummary] = useState(initialState.summary || null);
-  const [activeTab, setActiveTab] = useState('summary');
 
-  // Debug: Log when dashboard loads with session
+  const [sessionId,  setSessionId]  = useState(initialState.sessionId  || null);
+  const [filename,   setFilename]   = useState(initialState.filename   || '');
+  const [summary,    setSummary]    = useState(initialState.summary    || null);
+  // Support deep-link to a specific tab from the landing page
+  const [activeTab,  setActiveTab]  = useState(initialState.initialTab || 'summary');
+
   useEffect(() => {
     if (sessionId) {
       console.log('✅ Dashboard loaded with session:', sessionId);
@@ -84,14 +70,12 @@ function DashboardApp() {
     setActiveTab('summary');
   };
 
-  const handleBackToLanding = () => {
-    navigate('/');
-  };
+  const handleBackToLanding = () => navigate('/');
 
   return (
     <div className="app">
       <div className="app-content">
-        <Navbar 
+        <Navbar
           filename={filename}
           onNewUpload={handleNewUpload}
           sessionId={sessionId}
