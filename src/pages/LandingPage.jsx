@@ -358,7 +358,7 @@ function LandingPage() {
     if (!['csv','xls','xlsx'].includes(ext)) { alert('Please upload a CSV, XLS, or XLSX file'); return; }
     try {
       const fd = new FormData(); fd.append('file', file);
-      const res = await fetch(`${API_URL}/upload`, {method:'POST',body:fd}); if (!res.ok) throw new Error('Upload failed');
+      const res = await fetch(`${API_URL}/api/upload`, {method:'POST',body:fd}); if (!res.ok) throw new Error('Upload failed');
       const data = await res.json();
       if (!demoMode) { const nc = cur - 1; saveCredits(nc); setCreditsState(nc); }
       navigate('/app', { state: { sessionId:data.session_id, filename:data.filename, summary:data.summary, initialTab:targetTab||'summary' } });
