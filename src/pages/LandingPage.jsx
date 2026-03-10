@@ -4,7 +4,7 @@ import './LandingPage.css';
 import logo from '../assets/logo.jpeg';
 import dashboardImg from '../assets/interface.png';
 
-const API_URL = 'http://localhost:5000/api';
+const API_URL = 'https://datapulse-backend-ojwl.onrender.com';
 
 const CREDITS_KEY   = 'datapulse_credits';
 const DEMO_MODE_KEY = 'datapulse_demo_mode';
