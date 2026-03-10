@@ -4,6 +4,9 @@ import toast from 'react-hot-toast';
 import './ReportGenerator.css';
 
 const API_URL = process.env.REACT_APP_API_URL || 'https://datapulse-backend-ojwl.onrender.com/api';
+// Routes in app.py:
+//   GET /api/report/download/docx/<session_id>
+//   GET /api/report/download/pdf/<session_id>
 
 function ReportGenerator({ sessionId }) {
   const [downloadingDocx, setDownloadingDocx] = useState(false);
