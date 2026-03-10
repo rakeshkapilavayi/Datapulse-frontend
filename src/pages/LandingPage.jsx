@@ -352,18 +352,23 @@ function LandingPage() {
     if (el) { const nh = document.querySelector('.navbar')?.offsetHeight||0; window.scrollTo({top: el.offsetTop - nh, behavior:'smooth'}); }
     setMobileMenuOpen(false);
   };
+
+  // ── FIX: unified upload handler using /api/upload ──
   const handleFileUpload = async (file, targetTab) => {
     const cur = getCredits(); if (cur <= 0 && !demoMode) { setShowPricing(true); return; }
     const ext = file.name.split('.').pop().toLowerCase();
     if (!['csv','xls','xlsx'].includes(ext)) { alert('Please upload a CSV, XLS, or XLSX file'); return; }
     try {
       const fd = new FormData(); fd.append('file', file);
-      const res = await fetch(`${API_URL}/api/upload`, {method:'POST',body:fd}); if (!res.ok) throw new Error('Upload failed');
+      // ✅ FIXED: was '/upload', now correctly '/api/upload'
+      const res = await fetch(`${API_URL}/api/upload`, {method:'POST', body:fd});
+      if (!res.ok) throw new Error('Upload failed');
       const data = await res.json();
       if (!demoMode) { const nc = cur - 1; saveCredits(nc); setCreditsState(nc); }
       navigate('/app', { state: { sessionId:data.session_id, filename:data.filename, summary:data.summary, initialTab:targetTab||'summary' } });
     } catch(e) { console.error(e); alert('Upload failed. Please try again.'); }
   };
+
   const activateDemoMode   = () => { setDemoMode(true);  setDemoModeState(true);  setShowPricing(false); };
   const deactivateDemoMode = () => { setDemoMode(false); setDemoModeState(false); };
 
@@ -510,6 +515,117 @@ function DownloadablesModal({onClose,onGetStarted}){const items=[{icon:'📷',ti
 
 function PricingModal({onClose,onActivateDemoMode}){const plans=[{title:'Explorer',price:'0',credits:5,featured:false,desc:'Perfect for individuals exploring their data.',features:['5 dataset uploads','Up to 10k rows','Basic Data Cleaning','Core Visualizations','Basic ML Models','Quick Summary Insights']},{title:'Analyst',price:'799',credits:100,featured:true,desc:'For teams and serious data analysts.',features:['100 dataset uploads','Up to 200k rows','Priority Processing','Full Cleaning Suite + Reports','Advanced EDA (Heatmaps, Outliers)','All ML Models (XGBoost, Random Forest)','Export Cleaned Data + Model Files']},{title:'Architect',price:'1499',credits:999,featured:false,desc:'Unlimited power for organisations.',features:['Unlimited uploads','Unlimited rows','Custom Cleaning Rules','Full ML Suite + Tuning Dashboard','Custom LLM Insight Templates','Priority Support & SLA']}];return(<div className="modal-overlay" onClick={onClose}><div className="pricing-modal" onClick={e=>e.stopPropagation()}><button className="modal-close" onClick={onClose}>✕</button><div className="pricing-modal-header"><h2>You've used all your free credits</h2><p>Upgrade to continue — or use <strong>Demo Mode</strong> for client presentations</p></div><div className="demo-mode-banner" onClick={onActivateDemoMode}><div className="dmb-icon">🎬</div><div className="dmb-content"><strong>Enable Demo Mode — Free for client presentations</strong><p>Show DataPulse to clients without consuming credits. Uploads work normally, nothing is charged.</p></div><button className="dmb-btn" onClick={e=>{e.stopPropagation();onActivateDemoMode();}}>Activate →</button></div><div className="pricing-divider"><span>or upgrade a plan</span></div><div className="pricing-grid">{plans.map(plan=>(<div key={plan.title} className={`pricing-card ${plan.featured?'featured':''}`}>{plan.featured&&<div className="popular-badge">Most Popular</div>}<div className="pricing-header"><h3 className="pricing-title">{plan.title}</h3><div className="pricing-price"><span className="currency">₹</span><span className="amount">{plan.price}</span><span className="period">/month</span></div><p className="pricing-description">{plan.desc}</p><div className="pricing-credits-badge"><span>⚡</span><span>{plan.credits===999?'Unlimited':plan.credits} credits</span></div></div><ul className="pricing-features">{plan.features.map(f=><li key={f}>✓ {f}</li>)}</ul><button className={`pricing-button ${plan.featured?'primary':''}`}>{plan.price==='0'?'Current Plan':'Get Started'}</button></div>))}</div></div></div>);}
 
-function FileUploadBox({onFileUpload,credits,demoMode}){const[drag,setDrag]=useState(false);const[uploading,setUploading]=useState(false);const[progress,setProgress]=useState(0);const[stage,setStage]=useState('');const[fname,setFname]=useState('');const ref=React.useRef(null);const canUpload=credits>0||demoMode;const onDrag=e=>{e.preventDefault();e.stopPropagation();setDrag(e.type==='dragenter'||e.type==='dragover');};const onDrop=async e=>{e.preventDefault();e.stopPropagation();setDrag(false);if(e.dataTransfer.files?.[0])await upload(e.dataTransfer.files[0]);};const onChange=async e=>{e.preventDefault();if(e.target.files?.[0])await upload(e.target.files[0]);};const upload=async(file)=>{if(!canUpload)return;const ext=file.name.split('.').pop().toLowerCase();if(!['csv','xls','xlsx'].includes(ext)){alert('Please upload a CSV, XLS, or XLSX file');return;}setFname(file.name);setUploading(true);setProgress(0);setStage('uploading');try{const t=setInterval(()=>setProgress(p=>{if(p>=85){clearInterval(t);return 85;}return p+12;}),200);const fd=new FormData();fd.append('file',file);const res=await fetch(`${API_URL}/upload`,{method:'POST',body:fd});clearInterval(t);if(!res.ok)throw new Error('Upload failed');setProgress(95);setStage('processing');await new Promise(r=>setTimeout(r,600));setProgress(100);setStage('complete');setTimeout(()=>onFileUpload(file),600);}catch(e){console.error(e);setUploading(false);setProgress(0);setStage('');setFname('');alert('Upload failed. Please try again.');}};return(<div className="upload-section"><h3>Upload Your Dataset</h3><div className={`upload-box ${drag?'drag-active':''} ${uploading?'uploading':''} ${!canUpload?'disabled':''}`} onClick={()=>!uploading&&canUpload&&ref.current?.click()} onDragEnter={onDrag} onDragLeave={onDrag} onDragOver={onDrag} onDrop={onDrop} style={{cursor:uploading||!canUpload?'not-allowed':'pointer',minHeight:uploading?'450px':'auto'}}>{uploading?(<div className="upload-progress-container"><div className="circular-progress"><svg width="160" height="160"><circle stroke="#E5E7EB" strokeWidth="12" fill="transparent" r="70" cx="80" cy="80"/><circle stroke={stage==='complete'?'#10B981':'url(#grad)'} strokeWidth="12" fill="transparent" r="70" cx="80" cy="80" strokeLinecap="round" style={{strokeDasharray:`${2*Math.PI*70}`,strokeDashoffset:`${2*Math.PI*70*(1-progress/100)}`,transition:'stroke-dashoffset .5s ease,stroke .3s ease',transform:'rotate(-90deg)',transformOrigin:'50% 50%'}}/><defs><linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#5B8DEE"/><stop offset="100%" stopColor="#8B5CF6"/></linearGradient></defs></svg><div className="progress-text">{stage==='complete'?<div className="success-checkmark"><svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg></div>:<><div className="progress-number">{progress}%</div><div className="progress-label">{stage==='uploading'?'Uploading':'Processing'}</div></>}</div></div><div className="upload-file-info"><div className="file-icon">📊</div><div className="file-details"><div className="file-name">{fname}</div></div></div><div className="upload-status"><h4 className="status-title">{stage==='uploading'&&'📤 Uploading...'}{stage==='processing'&&'⚙️ Processing...'}{stage==='complete'&&'✅ Complete!'}</h4><p className="status-description">{stage==='uploading'&&'Transferring to our servers'}{stage==='processing'&&'Analysing structure & generating summary'}{stage==='complete'&&'Redirecting to dashboard...'}</p></div><div className="linear-progress"><div className="progress-track"><div className="progress-fill" style={{width:`${progress}%`,background:stage==='complete'?'linear-gradient(90deg,#10B981,#34D399)':'linear-gradient(90deg,#5B8DEE,#8B5CF6)'}}><div className="progress-shine"/></div></div><div className="progress-details"><span className="progress-stage">{stage==='uploading'?'Step 1 of 2 — Uploading':stage==='processing'?'Step 2 of 2 — Processing':'Complete'}</span><span className="progress-percent">{progress}%</span></div></div>{stage!=='complete'&&<div className="loading-spinner"><div className="spinner-dot"/><div className="spinner-dot"/><div className="spinner-dot"/></div>}</div>):!canUpload?(<div style={{padding:'3rem 1rem',textAlign:'center'}}><div style={{fontSize:'3rem',marginBottom:'1rem'}}>🔒</div><p style={{fontWeight:700,color:'#ef4444',fontSize:'1.125rem',marginBottom:'.5rem'}}>No credits remaining</p><p style={{color:'#6b7280'}}>Please upgrade your plan to continue</p></div>):(<><div className="upload-icon"><svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div><h4>Drag & Drop your file here</h4><p>or click to browse</p><span className="file-types">CSV, XLS, XLSX supported</span></>)}<input ref={ref} type="file" accept=".csv,.xls,.xlsx" onChange={onChange} style={{display:'none'}} disabled={uploading||!canUpload}/></div></div>);}
+// ═══════════════════════════════════════════════════════════════════════════════
+// FILE UPLOAD BOX  —  ✅ FIXED: uses /api/upload (was /upload → caused 404)
+// ═══════════════════════════════════════════════════════════════════════════════
+function FileUploadBox({onFileUpload,credits,demoMode}){
+  const[drag,setDrag]=useState(false);
+  const[uploading,setUploading]=useState(false);
+  const[progress,setProgress]=useState(0);
+  const[stage,setStage]=useState('');
+  const[fname,setFname]=useState('');
+  const ref=React.useRef(null);
+  const canUpload=credits>0||demoMode;
+
+  const onDrag=e=>{e.preventDefault();e.stopPropagation();setDrag(e.type==='dragenter'||e.type==='dragover');};
+  const onDrop=async e=>{e.preventDefault();e.stopPropagation();setDrag(false);if(e.dataTransfer.files?.[0])await upload(e.dataTransfer.files[0]);};
+  const onChange=async e=>{e.preventDefault();if(e.target.files?.[0])await upload(e.target.files[0]);};
+
+  const upload=async(file)=>{
+    if(!canUpload)return;
+    const ext=file.name.split('.').pop().toLowerCase();
+    if(!['csv','xls','xlsx'].includes(ext)){alert('Please upload a CSV, XLS, or XLSX file');return;}
+    setFname(file.name);
+    setUploading(true);
+    setProgress(0);
+    setStage('uploading');
+    try{
+      const t=setInterval(()=>setProgress(p=>{if(p>=85){clearInterval(t);return 85;}return p+12;}),200);
+      const fd=new FormData();
+      fd.append('file',file);
+      // ✅ FIXED: corrected endpoint from /upload to /api/upload
+      const res=await fetch(`${API_URL}/api/upload`,{method:'POST',body:fd});
+      clearInterval(t);
+      if(!res.ok)throw new Error('Upload failed');
+      setProgress(95);
+      setStage('processing');
+      await new Promise(r=>setTimeout(r,600));
+      setProgress(100);
+      setStage('complete');
+      setTimeout(()=>onFileUpload(file),600);
+    }catch(e){
+      console.error(e);
+      setUploading(false);
+      setProgress(0);
+      setStage('');
+      setFname('');
+      alert('Upload failed. Please try again.');
+    }
+  };
+
+  return(
+    <div className="upload-section">
+      <h3>Upload Your Dataset</h3>
+      <div
+        className={`upload-box ${drag?'drag-active':''} ${uploading?'uploading':''} ${!canUpload?'disabled':''}`}
+        onClick={()=>!uploading&&canUpload&&ref.current?.click()}
+        onDragEnter={onDrag} onDragLeave={onDrag} onDragOver={onDrag} onDrop={onDrop}
+        style={{cursor:uploading||!canUpload?'not-allowed':'pointer',minHeight:uploading?'450px':'auto'}}
+      >
+        {uploading?(
+          <div className="upload-progress-container">
+            <div className="circular-progress">
+              <svg width="160" height="160">
+                <circle stroke="#E5E7EB" strokeWidth="12" fill="transparent" r="70" cx="80" cy="80"/>
+                <circle stroke={stage==='complete'?'#10B981':'url(#grad)'} strokeWidth="12" fill="transparent" r="70" cx="80" cy="80" strokeLinecap="round" style={{strokeDasharray:`${2*Math.PI*70}`,strokeDashoffset:`${2*Math.PI*70*(1-progress/100)}`,transition:'stroke-dashoffset .5s ease,stroke .3s ease',transform:'rotate(-90deg)',transformOrigin:'50% 50%'}}/>
+                <defs><linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#5B8DEE"/><stop offset="100%" stopColor="#8B5CF6"/></linearGradient></defs>
+              </svg>
+              <div className="progress-text">
+                {stage==='complete'
+                  ?<div className="success-checkmark"><svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+                  :<><div className="progress-number">{progress}%</div><div className="progress-label">{stage==='uploading'?'Uploading':'Processing'}</div></>
+                }
+              </div>
+            </div>
+            <div className="upload-file-info">
+              <div className="file-icon">📊</div>
+              <div className="file-details"><div className="file-name">{fname}</div></div>
+            </div>
+            <div className="upload-status">
+              <h4 className="status-title">{stage==='uploading'&&'📤 Uploading...'}{stage==='processing'&&'⚙️ Processing...'}{stage==='complete'&&'✅ Complete!'}</h4>
+              <p className="status-description">{stage==='uploading'&&'Transferring to our servers'}{stage==='processing'&&'Analysing structure & generating summary'}{stage==='complete'&&'Redirecting to dashboard...'}</p>
+            </div>
+            <div className="linear-progress">
+              <div className="progress-track">
+                <div className="progress-fill" style={{width:`${progress}%`,background:stage==='complete'?'linear-gradient(90deg,#10B981,#34D399)':'linear-gradient(90deg,#5B8DEE,#8B5CF6)'}}>
+                  <div className="progress-shine"/>
+                </div>
+              </div>
+              <div className="progress-details">
+                <span className="progress-stage">{stage==='uploading'?'Step 1 of 2 — Uploading':stage==='processing'?'Step 2 of 2 — Processing':'Complete'}</span>
+                <span className="progress-percent">{progress}%</span>
+              </div>
+            </div>
+            {stage!=='complete'&&<div className="loading-spinner"><div className="spinner-dot"/><div className="spinner-dot"/><div className="spinner-dot"/></div>}
+          </div>
+        ):!canUpload?(
+          <div style={{padding:'3rem 1rem',textAlign:'center'}}>
+            <div style={{fontSize:'3rem',marginBottom:'1rem'}}>🔒</div>
+            <p style={{fontWeight:700,color:'#ef4444',fontSize:'1.125rem',marginBottom:'.5rem'}}>No credits remaining</p>
+            <p style={{color:'#6b7280'}}>Please upgrade your plan to continue</p>
+          </div>
+        ):(
+          <>
+            <div className="upload-icon"><svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div>
+            <h4>Drag & Drop your file here</h4>
+            <p>or click to browse</p>
+            <span className="file-types">CSV, XLS, XLSX supported</span>
+          </>
+        )}
+        <input ref={ref} type="file" accept=".csv,.xls,.xlsx" onChange={onChange} style={{display:'none'}} disabled={uploading||!canUpload}/>
+      </div>
+    </div>
+  );
+}
 
 export default LandingPage;
