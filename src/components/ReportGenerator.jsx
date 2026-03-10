@@ -3,28 +3,39 @@ import { FaFileDownload, FaFilePdf, FaFileWord, FaSpinner } from 'react-icons/fa
 import toast from 'react-hot-toast';
 import './ReportGenerator.css';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+const API_URL = process.env.REACT_APP_API_URL || 'https://datapulse-backend-ojwl.onrender.com/api';
 
 function ReportGenerator({ sessionId }) {
   const [downloadingDocx, setDownloadingDocx] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
 
   const downloadReport = async (format) => {
-    if (format === 'docx') {
-      setDownloadingDocx(true);
-    } else {
-      setDownloadingPdf(true);
-    }
-    
+    if (format === 'docx') setDownloadingDocx(true);
+    else setDownloadingPdf(true);
+
     try {
       const url = `${API_URL}/report/download/${format}/${sessionId}`;
-      
-      // Open in new window to trigger download
-      window.open(url, '_blank');
-      
-      toast.success(`Downloading ${format.toUpperCase()} report...`);
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || `Server error ${response.status}`);
+      }
+
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = `ml_analysis_report_${sessionId}.${format}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(blobUrl);
+
+      toast.success(`${format.toUpperCase()} report downloaded!`);
     } catch (error) {
-      toast.error(`Failed to download ${format.toUpperCase()} report`);
+      console.error('Download error:', error);
+      toast.error(`Failed to download: ${error.message}`);
     } finally {
       setTimeout(() => {
         setDownloadingDocx(false);
@@ -80,7 +91,7 @@ function ReportGenerator({ sessionId }) {
               </>
             )}
           </button>
-          
+
           <button
             className="btn btn-download btn-pdf"
             onClick={() => downloadReport('pdf')}
